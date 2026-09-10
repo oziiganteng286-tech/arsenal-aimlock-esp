@@ -1,14 +1,15 @@
 --[[
-    ARSENAL AIM LOCK + ESP SCRIPT (SkyZen UI Style - Enhanced)
-    ===========================================================
-    Premium Cyberpunk GUI with Advanced Features
+    ARSENAL AIM LOCK + ESP SCRIPT (SkyZen UI Style - Mobile Optimized)
+    ==================================================================
+    Premium Cyberpunk GUI with Floating Controls
     Features:
     - Aim Lock with target part selection (Head, Body, Hand)
     - ESP toggle (ON/OFF)
     - Draggable UI
     - Resizable UI (drag from bottom-right corner)
-    - Lock/Unlock UI
-    - Toggle UI visibility
+    - Floating Toggle Button (outside UI)
+    - Floating Lock Button (outside UI)
+    - Mobile optimized default size
     - Premium SkyZen UI Design
 ]]
 
@@ -50,6 +51,7 @@ local ESPObjects = {}
 
 -- UI Reference
 local MainGUI = nil
+local FloatingButtonsGUI = nil
 local UILocked = false
 local UIDragging = false
 local UIResizing = false
@@ -216,7 +218,88 @@ local function aimLock()
 end
 
 -- ============================================
--- UI CREATION (Enhanced)
+-- FLOATING BUTTONS CREATION
+-- ============================================
+
+local function createFloatingButtons()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "FloatingButtons"
+    gui.ResetOnSpawn = false
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.Parent = PlayerGui
+    
+    -- Toggle Button
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Name = "ToggleButton"
+    toggleBtn.Size = UDim2.fromOffset(60, 60)
+    toggleBtn.Position = UDim2.fromOffset(20, 20)
+    toggleBtn.BackgroundColor3 = Colors.Primary
+    toggleBtn.BorderSizePixel = 0
+    toggleBtn.Text = "⊞"
+    toggleBtn.TextColor3 = Colors.Text
+    toggleBtn.TextSize = 28
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.Parent = gui
+    round(toggleBtn, 12)
+    addGlowStroke(toggleBtn, Colors.Primary, 2, 0.4)
+    
+    -- Lock Button
+    local lockBtn = Instance.new("TextButton")
+    lockBtn.Name = "LockButton"
+    lockBtn.Size = UDim2.fromOffset(60, 60)
+    lockBtn.Position = UDim2.fromOffset(20, 90)
+    lockBtn.BackgroundColor3 = Colors.Primary
+    lockBtn.BorderSizePixel = 0
+    lockBtn.Text = "🔓"
+    lockBtn.TextColor3 = Colors.Text
+    lockBtn.TextSize = 24
+    lockBtn.Font = Enum.Font.GothamBold
+    lockBtn.Parent = gui
+    round(lockBtn, 12)
+    addGlowStroke(lockBtn, Colors.Primary, 2, 0.4)
+    
+    -- Draggable for floating buttons
+    local buttonsDragging = false
+    local buttonsStartPos = nil
+    
+    toggleBtn.InputBegan:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            buttonsDragging = true
+            buttonsStartPos = UserInputService:GetMouseLocation()
+            local startTogglePos = toggleBtn.Position
+            local startLockPos = lockBtn.Position
+            
+            local connection
+            connection = RunService.RenderStepped:Connect(function()
+                if buttonsDragging then
+                    local currentMouse = UserInputService:GetMouseLocation()
+                    local delta = currentMouse - buttonsStartPos
+                    toggleBtn.Position = UDim2.fromOffset(
+                        startTogglePos.X.Offset + delta.X,
+                        startTogglePos.Y.Offset + delta.Y
+                    )
+                    lockBtn.Position = UDim2.fromOffset(
+                        startLockPos.X.Offset + delta.X,
+                        startLockPos.Y.Offset + delta.Y
+                    )
+                else
+                    connection:Disconnect()
+                end
+            end)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            buttonsDragging = false
+        end
+    end)
+    
+    return gui, toggleBtn, lockBtn
+end
+
+-- ============================================
+-- MAIN UI CREATION (Mobile Optimized)
 -- ============================================
 
 local function createSkyZenUI()
@@ -226,11 +309,11 @@ local function createSkyZenUI()
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     gui.Parent = PlayerGui
     
-    -- Main Container
+    -- Main Container (Mobile optimized size: 500x550)
     local container = Instance.new("Frame")
     container.Name = "MainContainer"
-    container.Size = UDim2.fromOffset(700, 600)
-    container.Position = UDim2.fromOffset(100, 100)
+    container.Size = UDim2.fromOffset(500, 550)
+    container.Position = UDim2.fromOffset(200, 75)
     container.BackgroundColor3 = Colors.Background
     container.BorderSizePixel = 0
     container.Parent = gui
@@ -247,80 +330,47 @@ local function createSkyZenUI()
     header.BorderSizePixel = 0
     header.Parent = container
     round(header, 15)
-    
     addGlowStroke(header, Colors.Primary, 2, 0.5)
     
     -- Logo
     local logo = Instance.new("TextLabel")
-    logo.Size = UDim2.fromOffset(200, 50)
-    logo.Position = UDim2.fromOffset(20, 5)
+    logo.Size = UDim2.fromOffset(150, 40)
+    logo.Position = UDim2.fromOffset(15, 5)
     logo.BackgroundTransparency = 1
     logo.Text = "⚡ SKYZEN"
     logo.TextColor3 = Colors.Primary
-    logo.TextSize = 22
+    logo.TextSize = 18
     logo.Font = Enum.Font.GothamBlack
     logo.Parent = header
     
     local subtitle = Instance.new("TextLabel")
-    subtitle.Size = UDim2.fromOffset(200, 20)
-    subtitle.Position = UDim2.fromOffset(20, 27)
+    subtitle.Size = UDim2.fromOffset(150, 15)
+    subtitle.Position = UDim2.fromOffset(15, 24)
     subtitle.BackgroundTransparency = 1
-    subtitle.Text = "ARSENAL SCRIPT HUB"
+    subtitle.Text = "ARSENAL HUB"
     subtitle.TextColor3 = Colors.Muted
-    subtitle.TextSize = 9
+    subtitle.TextSize = 8
     subtitle.Font = Enum.Font.GothamMedium
     subtitle.Parent = header
     
-    -- Status Dot
+    -- Status
     local statusDot = Instance.new("Frame")
-    statusDot.Size = UDim2.fromOffset(10, 10)
-    statusDot.Position = UDim2.new(1, -180, 0.5, -5)
+    statusDot.Size = UDim2.fromOffset(8, 8)
+    statusDot.Position = UDim2.new(1, -110, 0.5, -4)
     statusDot.BackgroundColor3 = Colors.Success
     statusDot.BorderSizePixel = 0
     statusDot.Parent = header
     round(statusDot, 999)
     
     local statusText = Instance.new("TextLabel")
-    statusText.Size = UDim2.fromOffset(50, 20)
-    statusText.Position = UDim2.new(1, -165, 0.5, -10)
+    statusText.Size = UDim2.fromOffset(40, 16)
+    statusText.Position = UDim2.new(1, -100, 0.5, -8)
     statusText.BackgroundTransparency = 1
-    statusText.Text = "● ONLINE"
+    statusText.Text = "● ON"
     statusText.TextColor3 = Colors.Success
-    statusText.TextSize = 10
+    statusText.TextSize = 9
     statusText.Font = Enum.Font.GothamBold
     statusText.Parent = header
-    
-    -- Lock Button
-    local lockBtn = Instance.new("TextButton")
-    lockBtn.Name = "LockButton"
-    lockBtn.Size = UDim2.fromOffset(35, 35)
-    lockBtn.Position = UDim2.new(1, -80, 0.5, -17.5)
-    lockBtn.BackgroundColor3 = Colors.Primary
-    lockBtn.BackgroundTransparency = 0.2
-    lockBtn.BorderSizePixel = 0
-    lockBtn.Text = "🔓"
-    lockBtn.TextColor3 = Colors.Text
-    lockBtn.TextSize = 16
-    lockBtn.Font = Enum.Font.GothamBold
-    lockBtn.Parent = header
-    round(lockBtn, 6)
-    addGlowStroke(lockBtn, Colors.Primary, 1.5, 0.5)
-    
-    -- Close Button
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Name = "CloseButton"
-    closeBtn.Size = UDim2.fromOffset(35, 35)
-    closeBtn.Position = UDim2.new(1, -40, 0.5, -17.5)
-    closeBtn.BackgroundColor3 = Colors.Error
-    closeBtn.BackgroundTransparency = 0.2
-    closeBtn.BorderSizePixel = 0
-    closeBtn.Text = "✕"
-    closeBtn.TextColor3 = Colors.Text
-    closeBtn.TextSize = 18
-    closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.Parent = header
-    round(closeBtn, 6)
-    addGlowStroke(closeBtn, Colors.Error, 1.5, 0.5)
     
     -- ============================================
     -- CONTENT AREA
@@ -334,19 +384,19 @@ local function createSkyZenUI()
     contentArea.Parent = container
     
     local contentPadding = Instance.new("UIPadding")
-    contentPadding.PaddingLeft = UDim.new(0, 15)
-    contentPadding.PaddingRight = UDim.new(0, 15)
-    contentPadding.PaddingTop = UDim.new(0, 15)
-    contentPadding.PaddingBottom = UDim.new(0, 15)
+    contentPadding.PaddingLeft = UDim.new(0, 12)
+    contentPadding.PaddingRight = UDim.new(0, 12)
+    contentPadding.PaddingTop = UDim.new(0, 12)
+    contentPadding.PaddingBottom = UDim.new(0, 12)
     contentPadding.Parent = contentArea
     
     -- Title
     local contentTitle = Instance.new("TextLabel")
     contentTitle.Size = UDim2.fromScale(1, 0.08)
     contentTitle.BackgroundTransparency = 1
-    contentTitle.Text = "🎯 AIM LOCK SETTINGS"
+    contentTitle.Text = "🎯 AIM LOCK"
     contentTitle.TextColor3 = Colors.Text
-    contentTitle.TextSize = 20
+    contentTitle.TextSize = 16
     contentTitle.Font = Enum.Font.GothamBlack
     contentTitle.TextXAlignment = Enum.TextXAlignment.Left
     contentTitle.Parent = contentArea
@@ -355,8 +405,8 @@ local function createSkyZenUI()
     -- AIM LOCK CARD
     -- ============================================
     local aimCard = Instance.new("Frame")
-    aimCard.Size = UDim2.new(1, 0, 0.4, 0)
-    aimCard.Position = UDim2.fromOffset(0, 40)
+    aimCard.Size = UDim2.new(1, 0, 0.38, 0)
+    aimCard.Position = UDim2.fromOffset(0, 32)
     aimCard.BackgroundColor3 = Colors.Card
     aimCard.BorderSizePixel = 0
     aimCard.Parent = contentArea
@@ -364,10 +414,10 @@ local function createSkyZenUI()
     addGlowStroke(aimCard, Colors.Primary, 2, 0.4)
     
     local aimPadding = Instance.new("UIPadding")
-    aimPadding.PaddingLeft = UDim.new(0, 15)
-    aimPadding.PaddingRight = UDim.new(0, 15)
-    aimPadding.PaddingTop = UDim.new(0, 15)
-    aimPadding.PaddingBottom = UDim.new(0, 15)
+    aimPadding.PaddingLeft = UDim.new(0, 12)
+    aimPadding.PaddingRight = UDim.new(0, 12)
+    aimPadding.PaddingTop = UDim.new(0, 12)
+    aimPadding.PaddingBottom = UDim.new(0, 12)
     aimPadding.Parent = aimCard
     
     -- Aim Status
@@ -376,7 +426,7 @@ local function createSkyZenUI()
     aimStatusLabel.BackgroundTransparency = 1
     aimStatusLabel.Text = "Status:"
     aimStatusLabel.TextColor3 = Colors.Muted
-    aimStatusLabel.TextSize = 12
+    aimStatusLabel.TextSize = 11
     aimStatusLabel.Font = Enum.Font.GothamBold
     aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     aimStatusLabel.Parent = aimCard
@@ -387,7 +437,7 @@ local function createSkyZenUI()
     aimStatusValue.BackgroundTransparency = 1
     aimStatusValue.Text = "🔴 OFF"
     aimStatusValue.TextColor3 = Colors.Error
-    aimStatusValue.TextSize = 12
+    aimStatusValue.TextSize = 11
     aimStatusValue.Font = Enum.Font.GothamBold
     aimStatusValue.TextXAlignment = Enum.TextXAlignment.Right
     aimStatusValue.Parent = aimCard
@@ -395,14 +445,14 @@ local function createSkyZenUI()
     -- Toggle Button
     local toggleBtn = Instance.new("TextButton")
     toggleBtn.Name = "AimToggle"
-    toggleBtn.Size = UDim2.new(1, 0, 0.2, 0)
-    toggleBtn.Position = UDim2.fromOffset(0, 25)
+    toggleBtn.Size = UDim2.new(1, 0, 0.22, 0)
+    toggleBtn.Position = UDim2.fromOffset(0, 20)
     toggleBtn.BackgroundColor3 = Colors.Error
     toggleBtn.BackgroundTransparency = 0.2
     toggleBtn.BorderSizePixel = 0
     toggleBtn.Text = "TURN ON"
     toggleBtn.TextColor3 = Colors.Text
-    toggleBtn.TextSize = 13
+    toggleBtn.TextSize = 12
     toggleBtn.Font = Enum.Font.GothamBold
     toggleBtn.Parent = aimCard
     round(toggleBtn, 6)
@@ -411,25 +461,25 @@ local function createSkyZenUI()
     -- Target Part Label
     local targetLabel = Instance.new("TextLabel")
     targetLabel.Size = UDim2.new(1, 0, 0.12, 0)
-    targetLabel.Position = UDim2.fromOffset(0, 55)
+    targetLabel.Position = UDim2.fromOffset(0, 52)
     targetLabel.BackgroundTransparency = 1
-    targetLabel.Text = "Target Part:"
+    targetLabel.Text = "Target:"
     targetLabel.TextColor3 = Colors.Muted
-    targetLabel.TextSize = 11
+    targetLabel.TextSize = 10
     targetLabel.Font = Enum.Font.GothamBold
     targetLabel.TextXAlignment = Enum.TextXAlignment.Left
     targetLabel.Parent = aimCard
     
     -- Radio Container
     local radioContainer = Instance.new("Frame")
-    radioContainer.Size = UDim2.new(1, 0, 0.3, 0)
-    radioContainer.Position = UDim2.fromOffset(0, 70)
+    radioContainer.Size = UDim2.new(1, 0, 0.35, 0)
+    radioContainer.Position = UDim2.fromOffset(0, 65)
     radioContainer.BackgroundTransparency = 1
     radioContainer.Parent = aimCard
     
     local radioLayout = Instance.new("UIListLayout")
     radioLayout.FillDirection = Enum.FillDirection.Horizontal
-    radioLayout.Padding = UDim.new(0, 10)
+    radioLayout.Padding = UDim.new(0, 8)
     radioLayout.Parent = radioContainer
     
     local selectedIndex = 1
@@ -437,19 +487,20 @@ local function createSkyZenUI()
     for i, label in ipairs(TargetPartLabels) do
         local radioBtn = Instance.new("TextButton")
         radioBtn.Name = label
-        radioBtn.Size = UDim2.new(0.32, 0, 1, 0)
+        radioBtn.Size = UDim2.new(0.31, 0, 1, 0)
         radioBtn.BackgroundColor3 = (i == selectedIndex) and Colors.Primary or Colors.Card
         radioBtn.BackgroundTransparency = (i == selectedIndex) and 0.2 or 0.5
         radioBtn.BorderSizePixel = 0
         radioBtn.Text = "● " .. label
         radioBtn.TextColor3 = Colors.Text
-        radioBtn.TextSize = 10
+        radioBtn.TextSize = 9
         radioBtn.Font = Enum.Font.GothamBold
         radioBtn.Parent = radioContainer
         round(radioBtn, 5)
         addGlowStroke(radioBtn, Colors.Primary, 1, 0.5)
         
         radioBtn.MouseButton1Click:Connect(function()
+            if UILocked then return end
             for _, child in ipairs(radioContainer:GetChildren()) do
                 if child:IsA("TextButton") then
                     child.BackgroundColor3 = (child == radioBtn) and Colors.Primary or Colors.Card
@@ -458,7 +509,7 @@ local function createSkyZenUI()
             end
             Config.TargetPart = TargetParts[i]
             selectedIndex = i
-            print("✓ Target changed to: " .. TargetPartLabels[i])
+            print("✓ Target: " .. TargetPartLabels[i])
         end)
     end
     
@@ -467,8 +518,8 @@ local function createSkyZenUI()
     -- ============================================
     local espCard = Instance.new("Frame")
     espCard.Name = "ESPCard"
-    espCard.Size = UDim2.new(1, 0, 0.4, 0)
-    espCard.Position = UDim2.fromOffset(0, 260)
+    espCard.Size = UDim2.new(1, 0, 0.38, 0)
+    espCard.Position = UDim2.fromOffset(0, 280)
     espCard.BackgroundColor3 = Colors.Card
     espCard.BorderSizePixel = 0
     espCard.Parent = contentArea
@@ -476,30 +527,42 @@ local function createSkyZenUI()
     addGlowStroke(espCard, Colors.Secondary, 2, 0.4)
     
     local espPadding = Instance.new("UIPadding")
-    espPadding.PaddingLeft = UDim.new(0, 15)
-    espPadding.PaddingRight = UDim.new(0, 15)
-    espPadding.PaddingTop = UDim.new(0, 15)
-    espPadding.PaddingBottom = UDim.new(0, 15)
+    espPadding.PaddingLeft = UDim.new(0, 12)
+    espPadding.PaddingRight = UDim.new(0, 12)
+    espPadding.PaddingTop = UDim.new(0, 12)
+    espPadding.PaddingBottom = UDim.new(0, 12)
     espPadding.Parent = espCard
+    
+    -- ESP Title
+    local espTitle = Instance.new("TextLabel")
+    espTitle.Size = UDim2.new(1, 0, 0.1, 0)
+    espTitle.BackgroundTransparency = 1
+    espTitle.Text = "👁️ ESP"
+    espTitle.TextColor3 = Colors.Secondary
+    espTitle.TextSize = 14
+    espTitle.Font = Enum.Font.GothamBlack
+    espTitle.TextXAlignment = Enum.TextXAlignment.Left
+    espTitle.Parent = espCard
     
     -- ESP Status
     local espStatusLabel = Instance.new("TextLabel")
     espStatusLabel.Size = UDim2.new(0.5, 0, 0.15, 0)
+    espStatusLabel.Position = UDim2.fromOffset(0, 20)
     espStatusLabel.BackgroundTransparency = 1
     espStatusLabel.Text = "Status:"
     espStatusLabel.TextColor3 = Colors.Muted
-    espStatusLabel.TextSize = 12
+    espStatusLabel.TextSize = 11
     espStatusLabel.Font = Enum.Font.GothamBold
     espStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     espStatusLabel.Parent = espCard
     
     local espStatusValue = Instance.new("TextLabel")
     espStatusValue.Size = UDim2.new(0.5, 0, 0.15, 0)
-    espStatusValue.Position = UDim2.fromScale(0.5, 0)
+    espStatusValue.Position = UDim2.fromScale(0.5, 0.12)
     espStatusValue.BackgroundTransparency = 1
     espStatusValue.Text = "🟢 ON"
     espStatusValue.TextColor3 = Colors.Success
-    espStatusValue.TextSize = 12
+    espStatusValue.TextSize = 11
     espStatusValue.Font = Enum.Font.GothamBold
     espStatusValue.TextXAlignment = Enum.TextXAlignment.Right
     espStatusValue.Parent = espCard
@@ -507,14 +570,14 @@ local function createSkyZenUI()
     -- ESP Toggle Button
     local espToggleBtn = Instance.new("TextButton")
     espToggleBtn.Name = "ESPToggle"
-    espToggleBtn.Size = UDim2.new(1, 0, 0.65, 0)
-    espToggleBtn.Position = UDim2.fromOffset(0, 20)
+    espToggleBtn.Size = UDim2.new(1, 0, 0.55, 0)
+    espToggleBtn.Position = UDim2.fromOffset(0, 40)
     espToggleBtn.BackgroundColor3 = Colors.Success
     espToggleBtn.BackgroundTransparency = 0.2
     espToggleBtn.BorderSizePixel = 0
     espToggleBtn.Text = "TURN OFF"
     espToggleBtn.TextColor3 = Colors.Text
-    espToggleBtn.TextSize = 13
+    espToggleBtn.TextSize = 12
     espToggleBtn.Font = Enum.Font.GothamBold
     espToggleBtn.Parent = espCard
     round(espToggleBtn, 6)
@@ -525,8 +588,8 @@ local function createSkyZenUI()
     -- ============================================
     local resizeHandle = Instance.new("Frame")
     resizeHandle.Name = "ResizeHandle"
-    resizeHandle.Size = UDim2.fromOffset(30, 30)
-    resizeHandle.Position = UDim2.new(1, -30, 1, -30)
+    resizeHandle.Size = UDim2.fromOffset(25, 25)
+    resizeHandle.Position = UDim2.new(1, -25, 1, -25)
     resizeHandle.BackgroundColor3 = Colors.Primary
     resizeHandle.BorderSizePixel = 0
     resizeHandle.Parent = container
@@ -538,7 +601,7 @@ local function createSkyZenUI()
     resizeIcon.BackgroundTransparency = 1
     resizeIcon.Text = "⧔"
     resizeIcon.TextColor3 = Colors.Text
-    resizeIcon.TextSize = 18
+    resizeIcon.TextSize = 14
     resizeIcon.Font = Enum.Font.GothamBold
     resizeIcon.Parent = resizeHandle
     
@@ -581,19 +644,6 @@ local function createSkyZenUI()
             clearAllESP()
         end
         print("ESP: " .. (Config.ESPEnabled and "ON" or "OFF"))
-    end)
-    
-    closeBtn.MouseButton1Click:Connect(function()
-        gui:Destroy()
-        MainGUI = nil
-        print("✗ UI Ditutup")
-    end)
-    
-    lockBtn.MouseButton1Click:Connect(function()
-        UILocked = not UILocked
-        lockBtn.Text = UILocked and "🔒" or "🔓"
-        lockBtn.BackgroundColor3 = UILocked and Colors.Error or Colors.Primary
-        print("UI " .. (UILocked and "LOCKED" or "UNLOCKED"))
     end)
     
     -- ============================================
@@ -646,7 +696,7 @@ local function createSkyZenUI()
                     local currentMouse = UserInputService:GetMouseLocation()
                     local delta = currentMouse - ResizeStart
                     
-                    local newWidth = math.max(400, containerSize.X.Offset + delta.X)
+                    local newWidth = math.max(350, containerSize.X.Offset + delta.X)
                     local newHeight = math.max(300, containerSize.Y.Offset + delta.Y)
                     
                     container.Size = UDim2.fromOffset(newWidth, newHeight)
@@ -667,7 +717,7 @@ local function createSkyZenUI()
 end
 
 -- ============================================
--- SHOW/HIDE UI FUNCTION
+-- TOGGLE UI FUNCTION
 -- ============================================
 
 local function toggleUI()
@@ -685,8 +735,26 @@ end
 -- MAIN LOOP
 -- ============================================
 
+-- Create Floating Buttons
+FloatingButtonsGUI, local floatingToggle, local floatingLock = createFloatingButtons()
+
+-- Create Main UI
 MainGUI = createSkyZenUI()
 
+-- Floating Toggle Button Event
+floatingToggle.MouseButton1Click:Connect(function()
+    toggleUI()
+end)
+
+-- Floating Lock Button Event
+floatingLock.MouseButton1Click:Connect(function()
+    UILocked = not UILocked
+    floatingLock.Text = UILocked and "🔒" or "🔓"
+    floatingLock.BackgroundColor3 = UILocked and Colors.Error or Colors.Primary
+    print("UI " .. (UILocked and "LOCKED ✓" or "UNLOCKED ✓"))
+end)
+
+-- Keyboard Shortcuts
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
@@ -704,16 +772,19 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
+-- ESP Loop
 RunService.RenderStepped:Connect(function()
     updateESP()
 end)
 
+-- Aim Lock Loop
 RunService.RenderStepped:Connect(function()
     if Config.AimLockEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         aimLock()
     end
 end)
 
+-- Player Events
 Players.PlayerAdded:Connect(function(player)
     if Config.ESPEnabled then
         task.wait(0.5)
@@ -726,9 +797,9 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 print("✅ SkyZen Arsenal Loaded!")
-print("Press E to toggle Aim Lock")
-print("Press R to toggle ESP")
-print("Press F to toggle UI")
+print("📍 Floating Buttons: Top-Left Corner")
+print("⊞ = Toggle UI")
+print("🔓 = Lock/Unlock UI")
 print("🖱️ Drag UI by header")
-print("📐 Resize UI from bottom-right corner")
-print("🔒 Click lock button to lock/unlock UI")
+print("📐 Resize from bottom-right")
+print("Keyboard: E=Aim, R=ESP, F=Toggle")
