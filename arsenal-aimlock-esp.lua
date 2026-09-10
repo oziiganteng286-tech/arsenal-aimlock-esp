@@ -1,10 +1,11 @@
 --[[
-    ARSENAL AIM LOCK + ESP SCRIPT (SkyZen UI Style - Simplified)
-    ============================================================
+    ARSENAL AIM LOCK + ESP SCRIPT (SkyZen UI Style - Fixed)
+    ========================================================
     Premium Cyberpunk GUI with Aim Lock Settings & ESP Toggle
     Features:
     - Aim Lock with target part selection (Head, Body, Hand)
     - ESP toggle (ON/OFF)
+    - Toggle UI with keybind
     - Premium SkyZen UI Design
     - Keybind support
 ]]
@@ -26,6 +27,7 @@ local Config = {
     Smoothness = 0.1,
     AimKey = Enum.KeyCode.E,
     ESPKey = Enum.KeyCode.R,
+    UIToggleKey = Enum.KeyCode.F,
 }
 
 -- Target Part Mapping
@@ -43,6 +45,9 @@ local TargetPartLabels = {
 
 -- ESP Storage
 local ESPObjects = {}
+
+-- UI Reference
+local MainGUI = nil
 
 -- SkyZen Color Palette
 local Colors = {
@@ -153,6 +158,12 @@ local function updateESP()
     end
 end
 
+local function clearAllESP()
+    for player, _ in pairs(ESPObjects) do
+        removeESP(player)
+    end
+end
+
 -- ============================================
 -- AIM LOCK FUNCTIONS
 -- ============================================
@@ -200,7 +211,7 @@ local function aimLock()
 end
 
 -- ============================================
--- UI CREATION (SkyZen Style - Simplified)
+-- UI CREATION (SkyZen Style - Fixed)
 -- ============================================
 
 local function createSkyZenUI()
@@ -263,6 +274,22 @@ local function createSkyZenUI()
     statusText.TextSize = 11
     statusText.Font = Enum.Font.GothamBold
     statusText.Parent = header
+    
+    -- Close Button (X)
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Name = "CloseButton"
+    closeBtn.Size = UDim2.fromOffset(40, 40)
+    closeBtn.Position = UDim2.new(1, -50, 0.5, -20)
+    closeBtn.BackgroundColor3 = Colors.Error
+    closeBtn.BackgroundTransparency = 0.3
+    closeBtn.BorderSizePixel = 0
+    closeBtn.Text = "✕"
+    closeBtn.TextColor3 = Colors.Text
+    closeBtn.TextSize = 20
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.Parent = header
+    round(closeBtn, 6)
+    addGlowStroke(closeBtn, Colors.Error, 1.5, 0.5)
     
     -- ============================================
     -- SIDEBAR
@@ -370,6 +397,7 @@ local function createSkyZenUI()
     
     -- Toggle Button
     local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Name = "AimToggle"
     toggleBtn.Size = UDim2.new(1, 0, 0.25, 0)
     toggleBtn.Position = UDim2.fromOffset(0, 40)
     toggleBtn.BackgroundColor3 = Colors.Error
@@ -437,6 +465,7 @@ local function createSkyZenUI()
             -- Update config
             Config.TargetPart = TargetParts[i]
             selectedIndex = i
+            print("✓ Target changed to: " .. TargetPartLabels[i])
         end)
     end
     
@@ -444,6 +473,7 @@ local function createSkyZenUI()
     -- ESP CARD
     -- ============================================
     local espCard = Instance.new("Frame")
+    espCard.Name = "ESPCard"
     espCard.Size = UDim2.new(0.9, 0, 0.35, 0)
     espCard.Position = UDim2.fromOffset(20, 420)
     espCard.BackgroundColor3 = Colors.Card
@@ -484,6 +514,7 @@ local function createSkyZenUI()
     
     -- ESP Toggle Button
     local espToggleBtn = Instance.new("TextButton")
+    espToggleBtn.Name = "ESPToggle"
     espToggleBtn.Size = UDim2.new(1, 0, 0.5, 0)
     espToggleBtn.Position = UDim2.fromOffset(0, 35)
     espToggleBtn.BackgroundColor3 = Colors.Success
@@ -509,14 +540,13 @@ local function createSkyZenUI()
             toggleBtn.BackgroundColor3 = Colors.Success
             aimStatusValue.Text = "🟢 ON"
             aimStatusValue.TextColor3 = Colors.Success
-            addGlowStroke(toggleBtn, Colors.Success, 2, 0.3)
         else
             toggleBtn.Text = "TURN ON"
             toggleBtn.BackgroundColor3 = Colors.Error
             aimStatusValue.Text = "🔴 OFF"
             aimStatusValue.TextColor3 = Colors.Error
-            addGlowStroke(toggleBtn, Colors.Error, 2, 0.3)
         end
+        print("Aim Lock: " .. (Config.AimLockEnabled and "ON" or "OFF"))
     end)
     
     espToggleBtn.MouseButton1Click:Connect(function()
@@ -527,29 +557,47 @@ local function createSkyZenUI()
             espToggleBtn.BackgroundColor3 = Colors.Success
             espStatusValue.Text = "🟢 ON"
             espStatusValue.TextColor3 = Colors.Success
-            addGlowStroke(espToggleBtn, Colors.Success, 2, 0.3)
         else
             espToggleBtn.Text = "TURN ON"
             espToggleBtn.BackgroundColor3 = Colors.Error
             espStatusValue.Text = "🔴 OFF"
             espStatusValue.TextColor3 = Colors.Error
-            addGlowStroke(espToggleBtn, Colors.Error, 2, 0.3)
-            
-            -- Remove all ESP when disabled
-            for player, _ in pairs(ESPObjects) do
-                removeESP(player)
-            end
+            clearAllESP()
         end
+        print("ESP: " .. (Config.ESPEnabled and "ON" or "OFF"))
+    end)
+    
+    -- Close Button Event
+    closeBtn.MouseButton1Click:Connect(function()
+        gui:Destroy()
+        MainGUI = nil
+        print("✗ UI Ditutup")
     end)
     
     return gui
 end
 
 -- ============================================
+-- SHOW/HIDE UI FUNCTION
+-- ============================================
+
+local function toggleUI()
+    if MainGUI then
+        MainGUI:Destroy()
+        MainGUI = nil
+        print("✗ UI Ditutup")
+    else
+        MainGUI = createSkyZenUI()
+        print("✓ UI Dibuka")
+    end
+end
+
+-- ============================================
 -- MAIN LOOP
 -- ============================================
 
-createSkyZenUI()
+-- Create UI
+MainGUI = createSkyZenUI()
 
 -- Keybind Events
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -561,11 +609,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     elseif input.KeyCode == Config.ESPKey then
         Config.ESPEnabled = not Config.ESPEnabled
         if not Config.ESPEnabled then
-            for player, _ in pairs(ESPObjects) do
-                removeESP(player)
-            end
+            clearAllESP()
         end
         print(Config.ESPEnabled and "✓ ESP ON" or "✗ ESP OFF")
+    elseif input.KeyCode == Config.UIToggleKey then
+        toggleUI()
     end
 end)
 
@@ -596,4 +644,5 @@ end)
 print("✅ SkyZen Arsenal Loaded!")
 print("Press E to toggle Aim Lock")
 print("Press R to toggle ESP")
+print("Press F to toggle UI")
 print("Use GUI to select target part (Head, Body, Hand)")
