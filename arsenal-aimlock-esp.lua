@@ -1,12 +1,12 @@
 --[[
-    ARSENAL AIM LOCK + ESP SCRIPT
-    ==============================
+    ARSENAL AIM LOCK + ESP SCRIPT (SkyZen UI Style - Simplified)
+    ============================================================
+    Premium Cyberpunk GUI with Aim Lock Settings & ESP Toggle
     Features:
-    - Aim Lock to head
-    - ESP (see through walls)
-    - Customizable UI
-    - Keybind toggle
-    - Distance limit
+    - Aim Lock with target part selection (Head, Body, Hand)
+    - ESP toggle (ON/OFF)
+    - Premium SkyZen UI Design
+    - Keybind support
 ]]
 
 local Players = game:GetService("Players")
@@ -21,26 +21,41 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Config = {
     AimLockEnabled = false,
     ESPEnabled = true,
-    TargetPart = "Head", -- Head, Torso
+    TargetPart = "Head", -- Head, Torso (Body), RightHand (Hand)
     MaxDistance = 500,
     Smoothness = 0.1,
     AimKey = Enum.KeyCode.E,
     ESPKey = Enum.KeyCode.R,
-    ShowUI = true
+}
+
+-- Target Part Mapping
+local TargetParts = {
+    "Head",
+    "Torso",
+    "RightHand"
+}
+
+local TargetPartLabels = {
+    "Head",
+    "Body",
+    "Hand"
 }
 
 -- ESP Storage
 local ESPObjects = {}
 
--- Color Configuration
+-- SkyZen Color Palette
 local Colors = {
-    Primary = Color3.fromRGB(0, 170, 255),
-    Secondary = Color3.fromRGB(80, 215, 255),
-    Success = Color3.fromRGB(90, 255, 155),
-    Error = Color3.fromRGB(255, 85, 105),
-    Background = Color3.fromRGB(7, 9, 14),
-    Text = Color3.fromRGB(245, 248, 255),
-    Muted = Color3.fromRGB(145, 155, 175)
+    Primary = Color3.fromRGB(0, 170, 255),      -- Cyan
+    Secondary = Color3.fromRGB(80, 215, 255),   -- Light Cyan
+    Accent = Color3.fromRGB(138, 43, 226),      -- Purple
+    Success = Color3.fromRGB(0, 255, 136),      -- Green
+    Error = Color3.fromRGB(255, 85, 105),       -- Red
+    Background = Color3.fromRGB(10, 15, 30),    -- Dark Blue
+    Card = Color3.fromRGB(15, 20, 40),          -- Card Background
+    Text = Color3.fromRGB(245, 248, 255),       -- White
+    Muted = Color3.fromRGB(120, 140, 180),      -- Muted Blue
+    Border = Color3.fromRGB(0, 170, 255)        -- Neon Border
 }
 
 -- ============================================
@@ -51,44 +66,16 @@ local function round(object, radius)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, radius)
     corner.Parent = object
+    return corner
 end
 
-local function createLabel(text, size, parent, color)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.fromScale(1, 1)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = color or Colors.Text
-    label.TextSize = size or 14
-    label.Font = Enum.Font.GothamMedium
-    label.Parent = parent
-    return label
-end
-
-local function createButton(text, size, position, parent, callback)
-    local button = Instance.new("TextButton")
-    button.Name = text
-    button.Size = size
-    button.Position = position
-    button.BackgroundColor3 = Colors.Primary
-    button.BackgroundTransparency = 0.1
-    button.BorderSizePixel = 0
-    button.Text = text
-    button.TextColor3 = Colors.Text
-    button.TextSize = 14
-    button.Font = Enum.Font.GothamBold
-    button.Parent = parent
-    round(button, 8)
-    
+local function addGlowStroke(object, color, thickness, transparency)
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Colors.Primary
-    stroke.Thickness = 1
-    stroke.Transparency = 0.5
-    stroke.Parent = button
-    
-    button.MouseButton1Click:Connect(callback)
-    
-    return button
+    stroke.Color = color or Colors.Primary
+    stroke.Thickness = thickness or 2
+    stroke.Transparency = transparency or 0.3
+    stroke.Parent = object
+    return stroke
 end
 
 -- ============================================
@@ -115,19 +102,20 @@ local function createESP(player)
     -- ESP Label
     local espLabel = Instance.new("BillboardGui")
     espLabel.Size = UDim2.new(4, 0, 2, 0)
-    espLabel.MaxDistance = 500
+    espLabel.MaxDistance = Config.MaxDistance
     espLabel.Parent = humanoidRootPart
     
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.fromScale(1, 1)
-    textLabel.BackgroundTransparency = 0.3
+    textLabel.BackgroundTransparency = 0.2
     textLabel.BackgroundColor3 = Colors.Background
-    textLabel.Text = player.Name
+    textLabel.Text = "👤 " .. player.Name
     textLabel.TextColor3 = Colors.Success
     textLabel.TextSize = 12
     textLabel.Font = Enum.Font.GothamBold
     textLabel.Parent = espLabel
-    round(textLabel, 4)
+    round(textLabel, 6)
+    addGlowStroke(textLabel, Colors.Success, 1.5, 0.4)
     
     ESPObjects[player] = {
         Box = espBox,
@@ -212,158 +200,347 @@ local function aimLock()
 end
 
 -- ============================================
--- UI CREATION
+-- UI CREATION (SkyZen Style - Simplified)
 -- ============================================
 
-local function createMainUI()
+local function createSkyZenUI()
     -- Main Screen GUI
     local gui = Instance.new("ScreenGui")
-    gui.Name = "ArsenalAimLockGUI"
+    gui.Name = "SkyZenArsenal"
     gui.ResetOnSpawn = false
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     gui.Parent = PlayerGui
     
-    -- Background
-    local background = Instance.new("Frame")
-    background.Size = UDim2.fromOffset(320, 400)
-    background.Position = UDim2.fromOffset(20, 20)
-    background.BackgroundColor3 = Colors.Background
-    background.BorderSizePixel = 0
-    background.Parent = gui
-    round(background, 12)
+    -- ============================================
+    -- HEADER
+    -- ============================================
+    local header = Instance.new("Frame")
+    header.Size = UDim2.fromScale(1, 0.08)
+    header.BackgroundColor3 = Colors.Background
+    header.BorderSizePixel = 0
+    header.Parent = gui
     
-    -- Stroke
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Colors.Primary
-    stroke.Thickness = 2
-    stroke.Transparency = 0.5
-    stroke.Parent = background
+    addGlowStroke(header, Colors.Primary, 2, 0.5)
+    
+    -- Logo
+    local logo = Instance.new("TextLabel")
+    logo.Size = UDim2.fromOffset(200, 50)
+    logo.Position = UDim2.fromOffset(20, 5)
+    logo.BackgroundTransparency = 1
+    logo.Text = "⚡ SKYZEN"
+    logo.TextColor3 = Colors.Primary
+    logo.TextSize = 24
+    logo.Font = Enum.Font.GothamBlack
+    logo.Parent = header
+    
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.fromOffset(200, 20)
+    subtitle.Position = UDim2.fromOffset(20, 28)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = "ARSENAL SCRIPT HUB"
+    subtitle.TextColor3 = Colors.Muted
+    subtitle.TextSize = 9
+    subtitle.Font = Enum.Font.GothamMedium
+    subtitle.Parent = header
+    
+    -- Status
+    local statusDot = Instance.new("Frame")
+    statusDot.Size = UDim2.fromOffset(12, 12)
+    statusDot.Position = UDim2.fromScale(0.95, 0.5)
+    statusDot.AnchorPoint = Vector2.new(1, 0.5)
+    statusDot.BackgroundColor3 = Colors.Success
+    statusDot.BorderSizePixel = 0
+    statusDot.Parent = header
+    round(statusDot, 999)
+    
+    local statusText = Instance.new("TextLabel")
+    statusText.Size = UDim2.fromOffset(60, 20)
+    statusText.Position = UDim2.fromScale(0.93, 0.5)
+    statusText.AnchorPoint = Vector2.new(1, 0.5)
+    statusText.BackgroundTransparency = 1
+    statusText.Text = "● ONLINE"
+    statusText.TextColor3 = Colors.Success
+    statusText.TextSize = 11
+    statusText.Font = Enum.Font.GothamBold
+    statusText.Parent = header
+    
+    -- ============================================
+    -- SIDEBAR
+    -- ============================================
+    local sidebar = Instance.new("Frame")
+    sidebar.Size = UDim2.new(0.2, 0, 0.92, 0)
+    sidebar.Position = UDim2.fromScale(0, 0.08)
+    sidebar.BackgroundColor3 = Colors.Background
+    sidebar.BorderSizePixel = 0
+    sidebar.Parent = gui
+    
+    addGlowStroke(sidebar, Colors.Primary, 1, 0.6)
+    
+    local sidebarTitle = Instance.new("TextLabel")
+    sidebarTitle.Size = UDim2.fromScale(1, 0.08)
+    sidebarTitle.BackgroundTransparency = 1
+    sidebarTitle.Text = "MENU"
+    sidebarTitle.TextColor3 = Colors.Primary
+    sidebarTitle.TextSize = 14
+    sidebarTitle.Font = Enum.Font.GothamBold
+    sidebarTitle.Parent = sidebar
+    
+    local menuItems = {"🎯 AIM LOCK", "👁️ ESP"}
+    
+    for i, item in ipairs(menuItems) do
+        local btn = Instance.new("TextButton")
+        btn.Name = item
+        btn.Size = UDim2.new(0.9, 0, 0.08, 0)
+        btn.Position = UDim2.new(0.05, 0, 0.08 + (i-1) * 0.1, 0)
+        btn.BackgroundColor3 = Colors.Primary
+        btn.BackgroundTransparency = 0.2
+        btn.BorderSizePixel = 0
+        btn.Text = item
+        btn.TextColor3 = Colors.Text
+        btn.TextSize = 12
+        btn.Font = Enum.Font.GothamBold
+        btn.Parent = sidebar
+        round(btn, 8)
+        addGlowStroke(btn, Colors.Primary, 1, 0.4)
+    end
+    
+    -- ============================================
+    -- MAIN CONTENT - AIM LOCK SECTION
+    -- ============================================
+    local mainContent = Instance.new("Frame")
+    mainContent.Size = UDim2.new(0.8, 0, 0.92, 0)
+    mainContent.Position = UDim2.fromScale(0.2, 0.08)
+    mainContent.BackgroundColor3 = Colors.Background
+    mainContent.BorderSizePixel = 0
+    mainContent.Parent = gui
     
     -- Title
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.fromOffset(320, 40)
-    title.Position = UDim2.fromOffset(0, 0)
-    title.BackgroundTransparency = 0.5
-    title.BackgroundColor3 = Colors.Primary
-    title.Text = "⚡ ARSENAL HACK"
-    title.TextColor3 = Colors.Text
-    title.TextSize = 18
-    title.Font = Enum.Font.GothamBold
-    title.BorderSizePixel = 0
-    title.Parent = background
-    round(title, 12)
-    
-    -- Content Frame
-    local content = Instance.new("Frame")
-    content.Size = UDim2.fromOffset(300, 340)
-    content.Position = UDim2.fromOffset(10, 50)
-    content.BackgroundTransparency = 1
-    content.Parent = background
-    
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 10)
-    padding.PaddingRight = UDim.new(0, 10)
-    padding.PaddingTop = UDim.new(0, 10)
-    padding.PaddingBottom = UDim.new(0, 10)
-    padding.Parent = content
+    local contentTitle = Instance.new("TextLabel")
+    contentTitle.Size = UDim2.new(1, -40, 0, 40)
+    contentTitle.Position = UDim2.fromOffset(20, 20)
+    contentTitle.BackgroundTransparency = 1
+    contentTitle.Text = "🎯 AIM LOCK SETTINGS"
+    contentTitle.TextColor3 = Colors.Text
+    contentTitle.TextSize = 22
+    contentTitle.Font = Enum.Font.GothamBlack
+    contentTitle.TextXAlignment = Enum.TextXAlignment.Left
+    contentTitle.Parent = mainContent
     
     -- ============================================
-    -- AIM LOCK SECTION
+    -- AIM LOCK CARD
+    -- ============================================
+    local aimCard = Instance.new("Frame")
+    aimCard.Size = UDim2.new(0.9, 0, 0.35, 0)
+    aimCard.Position = UDim2.fromOffset(20, 70)
+    aimCard.BackgroundColor3 = Colors.Card
+    aimCard.BorderSizePixel = 0
+    aimCard.Parent = mainContent
+    round(aimCard, 12)
+    addGlowStroke(aimCard, Colors.Primary, 2, 0.4)
+    
+    -- Card Padding
+    local aimPadding = Instance.new("UIPadding")
+    aimPadding.PaddingLeft = UDim.new(0, 20)
+    aimPadding.PaddingRight = UDim.new(0, 20)
+    aimPadding.PaddingTop = UDim.new(0, 20)
+    aimPadding.PaddingBottom = UDim.new(0, 20)
+    aimPadding.Parent = aimCard
+    
+    -- Aim Lock Status
+    local aimStatusLabel = Instance.new("TextLabel")
+    aimStatusLabel.Size = UDim2.new(0.5, 0, 0.2, 0)
+    aimStatusLabel.BackgroundTransparency = 1
+    aimStatusLabel.Text = "Status:"
+    aimStatusLabel.TextColor3 = Colors.Muted
+    aimStatusLabel.TextSize = 14
+    aimStatusLabel.Font = Enum.Font.GothamBold
+    aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    aimStatusLabel.Parent = aimCard
+    
+    local aimStatusValue = Instance.new("TextLabel")
+    aimStatusValue.Size = UDim2.new(0.5, 0, 0.2, 0)
+    aimStatusValue.Position = UDim2.fromScale(0.5, 0)
+    aimStatusValue.BackgroundTransparency = 1
+    aimStatusValue.Text = "🔴 OFF"
+    aimStatusValue.TextColor3 = Colors.Error
+    aimStatusValue.TextSize = 14
+    aimStatusValue.Font = Enum.Font.GothamBold
+    aimStatusValue.TextXAlignment = Enum.TextXAlignment.Right
+    aimStatusValue.Parent = aimCard
+    
+    -- Toggle Button
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, 0, 0.25, 0)
+    toggleBtn.Position = UDim2.fromOffset(0, 40)
+    toggleBtn.BackgroundColor3 = Colors.Error
+    toggleBtn.BackgroundTransparency = 0.2
+    toggleBtn.BorderSizePixel = 0
+    toggleBtn.Text = "TURN ON"
+    toggleBtn.TextColor3 = Colors.Text
+    toggleBtn.TextSize = 14
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.Parent = aimCard
+    round(toggleBtn, 8)
+    addGlowStroke(toggleBtn, Colors.Error, 2, 0.3)
+    
+    -- Target Part Selection
+    local targetLabel = Instance.new("TextLabel")
+    targetLabel.Size = UDim2.new(1, 0, 0.15, 0)
+    targetLabel.Position = UDim2.fromOffset(0, 75)
+    targetLabel.BackgroundTransparency = 1
+    targetLabel.Text = "Target Part:"
+    targetLabel.TextColor3 = Colors.Muted
+    targetLabel.TextSize = 12
+    targetLabel.Font = Enum.Font.GothamBold
+    targetLabel.TextXAlignment = Enum.TextXAlignment.Left
+    targetLabel.Parent = aimCard
+    
+    -- Radio Buttons Container
+    local radioContainer = Instance.new("Frame")
+    radioContainer.Size = UDim2.new(1, 0, 0.35, 0)
+    radioContainer.Position = UDim2.fromOffset(0, 95)
+    radioContainer.BackgroundTransparency = 1
+    radioContainer.Parent = aimCard
+    
+    local radioLayout = Instance.new("UIListLayout")
+    radioLayout.FillDirection = Enum.FillDirection.Horizontal
+    radioLayout.Padding = UDim.new(0, 15)
+    radioLayout.Parent = radioContainer
+    
+    -- Radio Button Selection Index
+    local selectedIndex = 1
+    
+    for i, label in ipairs(TargetPartLabels) do
+        local radioBtn = Instance.new("TextButton")
+        radioBtn.Name = label
+        radioBtn.Size = UDim2.new(0.3, 0, 0.8, 0)
+        radioBtn.BackgroundColor3 = (i == selectedIndex) and Colors.Primary or Colors.Card
+        radioBtn.BackgroundTransparency = (i == selectedIndex) and 0.2 or 0.5
+        radioBtn.BorderSizePixel = 0
+        radioBtn.Text = "● " .. label
+        radioBtn.TextColor3 = Colors.Text
+        radioBtn.TextSize = 11
+        radioBtn.Font = Enum.Font.GothamBold
+        radioBtn.Parent = radioContainer
+        round(radioBtn, 6)
+        addGlowStroke(radioBtn, Colors.Primary, 1, 0.5)
+        
+        radioBtn.MouseButton1Click:Connect(function()
+            -- Update all buttons
+            for _, child in ipairs(radioContainer:GetChildren()) do
+                if child:IsA("TextButton") then
+                    child.BackgroundColor3 = (child == radioBtn) and Colors.Primary or Colors.Card
+                    child.BackgroundTransparency = (child == radioBtn) and 0.2 or 0.5
+                end
+            end
+            
+            -- Update config
+            Config.TargetPart = TargetParts[i]
+            selectedIndex = i
+        end)
+    end
+    
+    -- ============================================
+    -- ESP CARD
+    -- ============================================
+    local espCard = Instance.new("Frame")
+    espCard.Size = UDim2.new(0.9, 0, 0.35, 0)
+    espCard.Position = UDim2.fromOffset(20, 420)
+    espCard.BackgroundColor3 = Colors.Card
+    espCard.BorderSizePixel = 0
+    espCard.Parent = mainContent
+    round(espCard, 12)
+    addGlowStroke(espCard, Colors.Secondary, 2, 0.4)
+    
+    -- ESP Padding
+    local espPadding = Instance.new("UIPadding")
+    espPadding.PaddingLeft = UDim.new(0, 20)
+    espPadding.PaddingRight = UDim.new(0, 20)
+    espPadding.PaddingTop = UDim.new(0, 20)
+    espPadding.PaddingBottom = UDim.new(0, 20)
+    espPadding.Parent = espCard
+    
+    -- ESP Status
+    local espStatusLabel = Instance.new("TextLabel")
+    espStatusLabel.Size = UDim2.new(0.5, 0, 0.2, 0)
+    espStatusLabel.BackgroundTransparency = 1
+    espStatusLabel.Text = "Status:"
+    espStatusLabel.TextColor3 = Colors.Muted
+    espStatusLabel.TextSize = 14
+    espStatusLabel.Font = Enum.Font.GothamBold
+    espStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    espStatusLabel.Parent = espCard
+    
+    local espStatusValue = Instance.new("TextLabel")
+    espStatusValue.Size = UDim2.new(0.5, 0, 0.2, 0)
+    espStatusValue.Position = UDim2.fromScale(0.5, 0)
+    espStatusValue.BackgroundTransparency = 1
+    espStatusValue.Text = "🟢 ON"
+    espStatusValue.TextColor3 = Colors.Success
+    espStatusValue.TextSize = 14
+    espStatusValue.Font = Enum.Font.GothamBold
+    espStatusValue.TextXAlignment = Enum.TextXAlignment.Right
+    espStatusValue.Parent = espCard
+    
+    -- ESP Toggle Button
+    local espToggleBtn = Instance.new("TextButton")
+    espToggleBtn.Size = UDim2.new(1, 0, 0.5, 0)
+    espToggleBtn.Position = UDim2.fromOffset(0, 35)
+    espToggleBtn.BackgroundColor3 = Colors.Success
+    espToggleBtn.BackgroundTransparency = 0.2
+    espToggleBtn.BorderSizePixel = 0
+    espToggleBtn.Text = "TURN OFF"
+    espToggleBtn.TextColor3 = Colors.Text
+    espToggleBtn.TextSize = 14
+    espToggleBtn.Font = Enum.Font.GothamBold
+    espToggleBtn.Parent = espCard
+    round(espToggleBtn, 8)
+    addGlowStroke(espToggleBtn, Colors.Success, 2, 0.3)
+    
+    -- ============================================
+    -- BUTTON EVENTS
     -- ============================================
     
-    local aimSection = Instance.new("Frame")
-    aimSection.Size = UDim2.fromOffset(280, 100)
-    aimSection.BackgroundColor3 = Colors.Background
-    aimSection.BorderSizePixel = 0
-    aimSection.Parent = content
-    round(aimSection, 8)
-    
-    local aimStroke = Instance.new("UIStroke")
-    aimStroke.Color = Colors.Secondary
-    aimStroke.Thickness = 1
-    aimStroke.Transparency = 0.7
-    aimStroke.Parent = aimSection
-    
-    createLabel("🎯 AIM LOCK", 14, aimSection, Colors.Secondary)
-    
-    local aimToggle = createButton("OFF", UDim2.fromOffset(130, 35), UDim2.fromOffset(10, 30), aimSection, function()
+    toggleBtn.MouseButton1Click:Connect(function()
         Config.AimLockEnabled = not Config.AimLockEnabled
-        aimToggle.Text = Config.AimLockEnabled and "ON" or "OFF"
-        aimToggle.BackgroundColor3 = Config.AimLockEnabled and Colors.Success or Colors.Error
+        
+        if Config.AimLockEnabled then
+            toggleBtn.Text = "TURN OFF"
+            toggleBtn.BackgroundColor3 = Colors.Success
+            aimStatusValue.Text = "🟢 ON"
+            aimStatusValue.TextColor3 = Colors.Success
+            addGlowStroke(toggleBtn, Colors.Success, 2, 0.3)
+        else
+            toggleBtn.Text = "TURN ON"
+            toggleBtn.BackgroundColor3 = Colors.Error
+            aimStatusValue.Text = "🔴 OFF"
+            aimStatusValue.TextColor3 = Colors.Error
+            addGlowStroke(toggleBtn, Colors.Error, 2, 0.3)
+        end
     end)
     
-    local distanceLabel = createLabel("Distance: 500", 11, aimSection, Colors.Muted)
-    distanceLabel.Position = UDim2.fromOffset(150, 30)
-    distanceLabel.Size = UDim2.fromOffset(120, 35)
-    
-    -- ============================================
-    -- ESP SECTION
-    -- ============================================
-    
-    local espSection = Instance.new("Frame")
-    espSection.Size = UDim2.fromOffset(280, 100)
-    espSection.Position = UDim2.fromOffset(0, 110)
-    espSection.BackgroundColor3 = Colors.Background
-    espSection.BorderSizePixel = 0
-    espSection.Parent = content
-    round(espSection, 8)
-    
-    local espStroke = Instance.new("UIStroke")
-    espStroke.Color = Colors.Secondary
-    espStroke.Thickness = 1
-    espStroke.Transparency = 0.7
-    espStroke.Parent = espSection
-    
-    createLabel("👁️ ESP", 14, espSection, Colors.Secondary)
-    
-    local espToggle = createButton("ON", UDim2.fromOffset(130, 35), UDim2.fromOffset(10, 30), espSection, function()
+    espToggleBtn.MouseButton1Click:Connect(function()
         Config.ESPEnabled = not Config.ESPEnabled
-        espToggle.Text = Config.ESPEnabled and "ON" or "OFF"
-        espToggle.BackgroundColor3 = Config.ESPEnabled and Colors.Success or Colors.Error
         
-        if not Config.ESPEnabled then
+        if Config.ESPEnabled then
+            espToggleBtn.Text = "TURN OFF"
+            espToggleBtn.BackgroundColor3 = Colors.Success
+            espStatusValue.Text = "🟢 ON"
+            espStatusValue.TextColor3 = Colors.Success
+            addGlowStroke(espToggleBtn, Colors.Success, 2, 0.3)
+        else
+            espToggleBtn.Text = "TURN ON"
+            espToggleBtn.BackgroundColor3 = Colors.Error
+            espStatusValue.Text = "🔴 OFF"
+            espStatusValue.TextColor3 = Colors.Error
+            addGlowStroke(espToggleBtn, Colors.Error, 2, 0.3)
+            
+            -- Remove all ESP when disabled
             for player, _ in pairs(ESPObjects) do
                 removeESP(player)
             end
         end
     end)
-    
-    local targetLabel = createLabel("Target: Head", 11, espSection, Colors.Muted)
-    targetLabel.Position = UDim2.fromOffset(150, 30)
-    targetLabel.Size = UDim2.fromOffset(120, 35)
-    
-    -- ============================================
-    -- INFO SECTION
-    -- ============================================
-    
-    local infoSection = Instance.new("Frame")
-    infoSection.Size = UDim2.fromOffset(280, 100)
-    infoSection.Position = UDim2.fromOffset(0, 220)
-    infoSection.BackgroundColor3 = Colors.Background
-    infoSection.BorderSizePixel = 0
-    infoSection.Parent = content
-    round(infoSection, 8)
-    
-    local infoStroke = Instance.new("UIStroke")
-    infoStroke.Color = Colors.Secondary
-    infoStroke.Thickness = 1
-    infoStroke.Transparency = 0.7
-    infoStroke.Parent = infoSection
-    
-    createLabel("ℹ️ INFO", 14, infoSection, Colors.Secondary)
-    
-    local info1 = createLabel("E - Toggle Aim Lock", 10, infoSection, Colors.Muted)
-    info1.Position = UDim2.fromOffset(10, 30)
-    info1.Size = UDim2.fromOffset(260, 20)
-    
-    local info2 = createLabel("R - Toggle ESP", 10, infoSection, Colors.Muted)
-    info2.Position = UDim2.fromOffset(10, 50)
-    info2.Size = UDim2.fromOffset(260, 20)
-    
-    local info3 = createLabel("Made with ❤️", 10, infoSection, Colors.Primary)
-    info3.Position = UDim2.fromOffset(10, 70)
-    info3.Size = UDim2.fromOffset(260, 20)
-    info3.Font = Enum.Font.GothamBold
     
     return gui
 end
@@ -372,8 +549,7 @@ end
 -- MAIN LOOP
 -- ============================================
 
--- Create UI
-createMainUI()
+createSkyZenUI()
 
 -- Keybind Events
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -381,6 +557,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     
     if input.KeyCode == Config.AimKey then
         Config.AimLockEnabled = not Config.AimLockEnabled
+        print(Config.AimLockEnabled and "✓ Aim Lock ON" or "✗ Aim Lock OFF")
     elseif input.KeyCode == Config.ESPKey then
         Config.ESPEnabled = not Config.ESPEnabled
         if not Config.ESPEnabled then
@@ -388,6 +565,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
                 removeESP(player)
             end
         end
+        print(Config.ESPEnabled and "✓ ESP ON" or "✗ ESP OFF")
     end
 end)
 
@@ -403,7 +581,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Player Added Event
+-- Player Events
 Players.PlayerAdded:Connect(function(player)
     if Config.ESPEnabled then
         task.wait(0.5)
@@ -411,9 +589,11 @@ Players.PlayerAdded:Connect(function(player)
     end
 end)
 
--- Player Removed Event
 Players.PlayerRemoving:Connect(function(player)
     removeESP(player)
 end)
 
-print("✅ Arsenal Aim Lock + ESP Loaded! Press E to toggle Aim Lock, R to toggle ESP")
+print("✅ SkyZen Arsenal Loaded!")
+print("Press E to toggle Aim Lock")
+print("Press R to toggle ESP")
+print("Use GUI to select target part (Head, Body, Hand)")
